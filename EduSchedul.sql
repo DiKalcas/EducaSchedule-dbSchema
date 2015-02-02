@@ -34,6 +34,7 @@ DROP TABLE IF EXISTS `BuildingFloorRooms` ;
 
 CREATE TABLE IF NOT EXISTS `BuildingFloorRooms` (
   `buildingFloorRoomID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `buildingFloorRoomConcat` VARCHAR(48) NOT NULL,
   `buildingName` VARCHAR(45) NULL,
   `floorLevelName` VARCHAR(45) NULL,
   `roomName` VARCHAR(45) NULL,
@@ -61,6 +62,7 @@ DROP TABLE IF EXISTS `LocationAddresses` ;
 
 CREATE TABLE IF NOT EXISTS `LocationAddresses` (
   `locationAddressID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `locatAddreConcat` VARCHAR(64) NULL,
   `city` VARCHAR(45) NULL,
   `area` VARCHAR(45) NULL,
   `address` VARCHAR(45) NULL,
@@ -75,6 +77,108 @@ COLLATE = utf8_general_ci
 COMMENT = 'Location in terms of place of the event with Address of it.';
 
 CREATE UNIQUE INDEX `locationAddressID` ON `LocationAddresses` (`locationAddressID` ASC);
+
+
+-- -----------------------------------------------------
+-- Table `EventTypes`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `EventTypes` ;
+
+CREATE TABLE IF NOT EXISTS `EventTypes` (
+  `eventTypeID` INT UNSIGNED NOT NULL,
+  `eventTypeName` VARCHAR(45) NOT NULL,
+  `totalDurationMinut` DECIMAL(4,0) NOT NULL,
+  PRIMARY KEY (`eventTypeID`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8
+COLLATE = utf8_general_ci;
+
+CREATE UNIQUE INDEX `eventTypeID_idx` ON `EventTypes` (`eventTypeID` ASC);
+
+
+-- -----------------------------------------------------
+-- Table `ProfessorTitles`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `ProfessorTitles` ;
+
+CREATE TABLE IF NOT EXISTS `ProfessorTitles` (
+  `professorTitleID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `titleName` VARCHAR(45) NULL,
+  `weekTeachHours` INT NULL,
+  `isStanding` SET('ΝΑΙ','ΟΧΙ') NOT NULL DEFAULT 'ΟΧΙ' COMMENT 'is standing this title of professor? gives the permanent of the title or not',
+  `otherDetails` VARCHAR(45) NULL,
+  PRIMARY KEY (`professorTitleID`))
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8
+COLLATE = utf8_general_ci
+COMMENT = 'Institution Academic Titles of the Professors:  Ακαδιμαϊκοί τίτλοι του Τ.Ε.Ι. στους μόνιμους εκπαιδευτικούς αλλά και στους έκτακτους εκπαιδευτικούς.';
+
+CREATE UNIQUE INDEX `professorTitleID_UNIQUE` ON `ProfessorTitles` (`professorTitleID` ASC);
+
+
+-- -----------------------------------------------------
+-- Table `JobTitles`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `JobTitles` ;
+
+CREATE TABLE IF NOT EXISTS `JobTitles` (
+  `jobTitleID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `jobTitleName` VARCHAR(45) NOT NULL,
+  `jobStatusBonus` INT NOT NULL,
+  PRIMARY KEY (`jobTitleID`))
+ENGINE = InnoDB;
+
+CREATE UNIQUE INDEX `jobTitleID_UNIQUE` ON `JobTitles` (`jobTitleID` ASC);
+
+
+-- -----------------------------------------------------
+-- Table `Professors`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `Professors` ;
+
+CREATE TABLE IF NOT EXISTS `Professors` (
+  `professorID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `professorFullName` VARCHAR(72) NULL,
+  `professorLastName` VARCHAR(45) NULL,
+  `professorMiddleName` VARCHAR(45) NULL,
+  `professorFirstName` VARCHAR(45) NULL,
+  `professorShortName` VARCHAR(18) NULL,
+  `identityCardCode` VARCHAR(11) NULL,
+  `nationalTaxNum` MEDIUMINT NULL,
+  `phoneNumber` VARCHAR(45) NULL,
+  `emailAddress` VARCHAR(45) NULL,
+  `locationAddressID_ofLocationAddresses` INT UNSIGNED NOT NULL,
+  `professorTitleID_ofProfessorTitles` INT UNSIGNED NOT NULL,
+  `jobTitleID_ofJobTitles` INT UNSIGNED NOT NULL,
+  `otherDetails` VARCHAR(45) NULL,
+  PRIMARY KEY (`professorID`),
+  CONSTRAINT `locationAddressID_ofLocationAddresses`
+    FOREIGN KEY (`locationAddressID_ofLocationAddresses`)
+    REFERENCES `LocationAddresses` (`locationAddressID`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT `professorTitleID_ofProfessorTitles`
+    FOREIGN KEY (`professorTitleID_ofProfessorTitles`)
+    REFERENCES `ProfessorTitles` (`professorTitleID`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT `jobTitleID_ofJobTitles`
+    FOREIGN KEY (`jobTitleID_ofJobTitles`)
+    REFERENCES `JobTitles` (`jobTitleID`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8
+COLLATE = utf8_general_ci
+COMMENT = 'Available professors (Roster) as the staff of institution to be assigned lessons.';
+
+CREATE UNIQUE INDEX `professorID` ON `Professors` (`professorID` ASC);
+
+CREATE INDEX `locationAddressID_ofLocationAddresses_idx` ON `Professors` (`locationAddressID_ofLocationAddresses` ASC);
+
+CREATE INDEX `professorTitleID_ofProfessorTitles_idx` ON `Professors` (`professorTitleID_ofProfessorTitles` ASC);
+
+CREATE INDEX `jobTitleID_ofJobTitles_idx` ON `Professors` (`jobTitleID_ofJobTitles` ASC);
 
 
 -- -----------------------------------------------------
@@ -97,6 +201,7 @@ DROP TABLE IF EXISTS `Subjects` ;
 CREATE TABLE IF NOT EXISTS `Subjects` (
   `subjectID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `subjectName` VARCHAR(45) NULL,
+  `subjectAbbrev` VARCHAR(25) NULL,
   `description` VARCHAR(60) NULL,
   `weekTeach` INT NULL COMMENT 'εβδομαδιαίες ώρες διδασκαλίας',
   `otherDetails` VARCHAR(60) NULL,
@@ -125,6 +230,7 @@ DROP TABLE IF EXISTS `Schools` ;
 CREATE TABLE IF NOT EXISTS `Schools` (
   `schoolID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   `schoolSectionName` VARCHAR(45) NOT NULL,
+  `schoolSectionAbbrev` VARCHAR(25) NOT NULL,
   `locatAddressID_byLocationAddresses` INT UNSIGNED NOT NULL,
   PRIMARY KEY (`schoolID`),
   CONSTRAINT `locatAddressID_byLocationAddresses`
@@ -166,26 +272,27 @@ CREATE UNIQUE INDEX `teachMethodID` ON `TeachMethods` (`teachMethodID` ASC);
 DROP TABLE IF EXISTS `EventPlannedCourses` ;
 
 CREATE TABLE IF NOT EXISTS `EventPlannedCourses` (
-  `schoolID` INT UNSIGNED NOT NULL,
-  `subjectID` INT UNSIGNED NOT NULL,
-  `teachMethodID_byTeachMethods` INT UNSIGNED NOT NULL,
+  `eventPlannedCourseID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `eventPlannedCourseAbbrev` VARCHAR(72) NOT NULL,
+  `schoolID_ofSchools` INT UNSIGNED NOT NULL,
+  `subjectID_ofSubjects` INT UNSIGNED NOT NULL,
+  `teachMethodID_ofTeachMethods` INT UNSIGNED NOT NULL,
   `secretaryCode` INT NULL,
   `ECTS` INT NULL COMMENT 'διδακτικές πιστωτικές μονάδες που χρησιμοποιούνται για να καταμετρήσουν τα μαθήματα που έχει ολοκληρώσει ο φοιτητής',
   `otherDetails` VARCHAR(45) NULL,
-  `eventPlannedCourseID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  PRIMARY KEY (`eventPlannedCourseID`, `schoolID`, `subjectID`, `teachMethodID_byTeachMethods`),
-  CONSTRAINT `subjectID`
-    FOREIGN KEY (`subjectID`)
+  PRIMARY KEY (`eventPlannedCourseID`, `schoolID_ofSchools`, `subjectID_ofSubjects`, `teachMethodID_ofTeachMethods`),
+  CONSTRAINT `subjectID_ofSubjects`
+    FOREIGN KEY (`subjectID_ofSubjects`)
     REFERENCES `Subjects` (`subjectID`)
     ON DELETE RESTRICT
     ON UPDATE CASCADE,
-  CONSTRAINT `schoolID`
-    FOREIGN KEY (`schoolID`)
+  CONSTRAINT `schoolID_ofSchools`
+    FOREIGN KEY (`schoolID_ofSchools`)
     REFERENCES `Schools` (`schoolID`)
     ON DELETE RESTRICT
     ON UPDATE CASCADE,
-  CONSTRAINT `teachMethodID_byTeachMethods`
-    FOREIGN KEY (`teachMethodID_byTeachMethods`)
+  CONSTRAINT `teachMethodID_ofTeachMethods`
+    FOREIGN KEY (`teachMethodID_ofTeachMethods`)
     REFERENCES `TeachMethods` (`teachMethodID`)
     ON DELETE RESTRICT
     ON UPDATE CASCADE)
@@ -193,73 +300,103 @@ ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8
 COLLATE = utf8_general_ci;
 
-CREATE INDEX `subjectID_idx` ON `EventPlannedCourses` (`subjectID` ASC);
+CREATE INDEX `subjectID_ofSubjects_idx` ON `EventPlannedCourses` (`subjectID_ofSubjects` ASC);
 
-CREATE INDEX `schoolID_idx` ON `EventPlannedCourses` (`schoolID` ASC);
+CREATE INDEX `schoolID_ofSchools_idx` ON `EventPlannedCourses` (`schoolID_ofSchools` ASC);
 
-CREATE INDEX `teachMethodID_byTeachMethods_idx` ON `EventPlannedCourses` (`teachMethodID_byTeachMethods` ASC);
+CREATE INDEX `teachMethodID_ofTeachMethods_idx` ON `EventPlannedCourses` (`teachMethodID_ofTeachMethods` ASC);
 
-CREATE UNIQUE INDEX `EventPlannedCourseID_UNIQUE` ON `EventPlannedCourses` (`eventPlannedCourseID` ASC);
-
-
--- -----------------------------------------------------
--- Table `ProfessorTitles`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `ProfessorTitles` ;
-
-CREATE TABLE IF NOT EXISTS `ProfessorTitles` (
-  `professorTitleID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `titleName` VARCHAR(45) NULL,
-  `weekTeachHours` INT NULL,
-  `isStanding` SET('ΝΑΙ','ΟΧΙ') NOT NULL DEFAULT 'ΟΧΙ' COMMENT 'is standing this title of professor? gives the permanent of the title or not',
-  `otherDetails` VARCHAR(45) NULL,
-  PRIMARY KEY (`professorTitleID`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8
-COLLATE = utf8_general_ci
-COMMENT = 'Institution Academic Titles of the Professors:  Ακαδιμαϊκοί τίτλοι του Τ.Ε.Ι. στους μόνιμους εκπαιδευτικούς αλλά και στους έκτακτους εκπαιδευτικούς.';
-
-CREATE UNIQUE INDEX `professorTitleID_UNIQUE` ON `ProfessorTitles` (`professorTitleID` ASC);
+CREATE UNIQUE INDEX `eventPlannedCourseID_UNIQUE` ON `EventPlannedCourses` (`eventPlannedCourseID` ASC);
 
 
 -- -----------------------------------------------------
--- Table `Professors`
+-- Table `Days`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `Professors` ;
+DROP TABLE IF EXISTS `Days` ;
 
-CREATE TABLE IF NOT EXISTS `Professors` (
-  `professorID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `professorShortName` VARCHAR(45) NULL,
-  `professorLastName` VARCHAR(45) NULL,
-  `professorMiddleName` VARCHAR(45) NULL,
-  `professorFirstName` VARCHAR(45) NULL,
-  `jobTitle` VARCHAR(45) NULL,
-  `phoneNumber` VARCHAR(45) NULL,
-  `emailAddress` VARCHAR(45) NULL,
-  `otherDetails` VARCHAR(45) NULL,
-  `locationAddressID_ofLocationAddresses` INT UNSIGNED NOT NULL,
-  `professorTitleID_ofProfessorTitles` INT UNSIGNED NOT NULL,
-  PRIMARY KEY (`professorID`),
-  CONSTRAINT `locationAddressID_ofLocationAddresses`
-    FOREIGN KEY (`locationAddressID_ofLocationAddresses`)
-    REFERENCES `LocationAddresses` (`locationAddressID`)
+CREATE TABLE IF NOT EXISTS `Days` (
+  `dayID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `dayName` VARCHAR(45) NULL,
+  `dayAbbrev` VARCHAR(45) NULL,
+  PRIMARY KEY (`dayID`))
+ENGINE = InnoDB;
+
+CREATE UNIQUE INDEX `dayID_idx` ON `Days` (`dayID` ASC);
+
+
+-- -----------------------------------------------------
+-- Table `TimeSlots`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `TimeSlots` ;
+
+CREATE TABLE IF NOT EXISTS `TimeSlots` (
+  `timeSlotID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `timeSlotConcat` VARCHAR(64) NOT NULL,
+  `daySlotStart` SET('Δε0800','Δε0900','Δε1000','Δε1100','Δε1200','Δε1300','Δε1400','Δε1500','Δε1600','Δε1700','Δε1800','Δε1900','Τρ0800','Τρ0900','Τρ1000','Τρ1100','Τρ1200','Τρ1300','Τρ1400','Τρ1500','Τρ1600','Τρ1700','Τρ1800','Τρ1900','Τε0800','Τε0900','Τε1000','Τε1100','Τε1200','Τε1300','Τε1400','Τε1500','Τε1600','Τε1700','Τε1800','Τε1900','Πε0800','Πε0900','Πε1000','Πε1100','Πε1200','Πε1300','Πε1400','Πε1500','Πε1600','Πε1700','Πε1800','Πε1900','Πα0800','Πα0900','Πα1000','Πα1100','Πα1200','Πα1300','Πα1400','Πα1500','Πα1600','Πα1700','Πα1800','Πα1900') NULL,
+  `slotEndNumber` SET('0859','0959','1059','1159','1259','1359','1459','1559','1659','1759','1859','1959') NULL,
+  `dayID` INT UNSIGNED NOT NULL,
+  `eventTypeID` INT UNSIGNED NOT NULL,
+  PRIMARY KEY (`timeSlotID`),
+  CONSTRAINT `eventTypeID`
+    FOREIGN KEY (`eventTypeID`)
+    REFERENCES `EventTypes` (`eventTypeID`)
     ON DELETE RESTRICT
     ON UPDATE CASCADE,
-  CONSTRAINT `professorTitleID_ofProfessorTitles`
-    FOREIGN KEY (`professorTitleID_ofProfessorTitles`)
-    REFERENCES `ProfessorTitles` (`professorTitleID`)
+  CONSTRAINT `dayID`
+    FOREIGN KEY (`dayID`)
+    REFERENCES `Days` (`dayID`)
     ON DELETE RESTRICT
     ON UPDATE CASCADE)
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8
 COLLATE = utf8_general_ci
-COMMENT = 'Available professors as the staff of institution to be assigned lessons.';
+COMMENT = 'Time slot is the time from a chronological point and have a duration, the event time.';
 
-CREATE UNIQUE INDEX `professorID` ON `Professors` (`professorID` ASC);
+CREATE UNIQUE INDEX `timeSlotID_idx` ON `TimeSlots` (`timeSlotID` ASC);
 
-CREATE INDEX `locationAddressID_ofLocationAddresses_idx` ON `Professors` (`locationAddressID_ofLocationAddresses` ASC);
+CREATE INDEX `eventTypeID_idx` ON `TimeSlots` (`eventTypeID` ASC);
 
-CREATE INDEX `professorTitleID_ofProfessorTitles_idx` ON `Professors` (`professorTitleID_ofProfessorTitles` ASC);
+CREATE INDEX `dayID_idx` ON `TimeSlots` (`dayID` ASC);
+
+
+-- -----------------------------------------------------
+-- Table `ScarceResources`
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `ScarceResources` ;
+
+CREATE TABLE IF NOT EXISTS `ScarceResources` (
+  `scarceResourceID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `scarceResourceAbbrev` VARCHAR(72) NOT NULL,
+  `locationAddressID_byLocationAddresses` INT UNSIGNED NOT NULL,
+  `buildingFloorRoomID_byBuildingFloorRooms` INT UNSIGNED NOT NULL,
+  `timeSlotID_byTimeSlots` INT UNSIGNED NOT NULL,
+  PRIMARY KEY (`scarceResourceID`, `locationAddressID_byLocationAddresses`, `buildingFloorRoomID_byBuildingFloorRooms`, `timeSlotID_byTimeSlots`),
+  CONSTRAINT `locationAddressID_byLocationAddresses`
+    FOREIGN KEY (`locationAddressID_byLocationAddresses`)
+    REFERENCES `LocationAddresses` (`locationAddressID`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT `buildingFloorRoomID_byBuildingFloorRooms`
+    FOREIGN KEY (`buildingFloorRoomID_byBuildingFloorRooms`)
+    REFERENCES `BuildingFloorRooms` (`buildingFloorRoomID`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT `timeSlotID_byTimeSlots`
+    FOREIGN KEY (`timeSlotID_byTimeSlots`)
+    REFERENCES `TimeSlots` (`timeSlotID`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = utf8
+COLLATE = utf8_general_ci;
+
+CREATE INDEX `locationAddressID_byLocationAddresses_idx` ON `ScarceResources` (`locationAddressID_byLocationAddresses` ASC);
+
+CREATE INDEX `buildingFloorRoomID_byBuildingFloorRooms_idx` ON `ScarceResources` (`buildingFloorRoomID_byBuildingFloorRooms` ASC);
+
+CREATE UNIQUE INDEX `scarceResourcesID_UNIQUE` ON `ScarceResources` (`scarceResourceID` ASC);
+
+CREATE INDEX `timeSlotID_byTimeSlots_idx` ON `ScarceResources` (`timeSlotID_byTimeSlots` ASC);
 
 
 -- -----------------------------------------------------
@@ -272,6 +409,7 @@ CREATE TABLE IF NOT EXISTS `StudentGroups` (
   `studentGroupName` VARCHAR(60) NULL COMMENT 'Student group name is the Title of the student group. The syntax of this  field  is like: ΕΞΑΜΗΝΟΥ ΖΖ ΟΜ' /* comment truncated */ /*�ΔΑ ΦΟΙΤΗΤΩΝ
 In addition can be recorded as: ΚΑΙ ΠΕΡΑΣΜΕΝΩΝ ΕΞΑΜΗΝΩΝ
 so that to add in the same group the students of older semesters which are still registered in the lesson.*/,
+  `studentGroupAbbrev` VARCHAR(45) NULL,
   PRIMARY KEY (`studentGroupID`))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8
@@ -287,10 +425,11 @@ CREATE UNIQUE INDEX `studentGroupID` ON `StudentGroups` (`studentGroupID` ASC);
 DROP TABLE IF EXISTS `SchoolStudentGroup_Professor_LINKS` ;
 
 CREATE TABLE IF NOT EXISTS `SchoolStudentGroup_Professor_LINKS` (
+  `schoolStudentGroupProfessorID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `schoolStudGroupProfesAbbrev` VARCHAR(72) NOT NULL,
   `schoolID_bySchools` INT UNSIGNED NOT NULL,
   `studentGroupID_byStudentGroups` INT UNSIGNED NOT NULL,
   `professorID_byProfessors` INT UNSIGNED NOT NULL,
-  `schoolStudentGroupProfessorID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`schoolStudentGroupProfessorID`, `schoolID_bySchools`, `studentGroupID_byStudentGroups`, `professorID_byProfessors`),
   CONSTRAINT `schoolID_bySchools`
     FOREIGN KEY (`schoolID_bySchools`)
@@ -318,112 +457,6 @@ CREATE INDEX `schoolID_bySchools_idx` ON `SchoolStudentGroup_Professor_LINKS` (`
 CREATE INDEX `studentGroupID_byStudentGroups_idx` ON `SchoolStudentGroup_Professor_LINKS` (`studentGroupID_byStudentGroups` ASC);
 
 CREATE UNIQUE INDEX `SchoolStudentGroupProfessorID_UNIQUE` ON `SchoolStudentGroup_Professor_LINKS` (`schoolStudentGroupProfessorID` ASC);
-
-
--- -----------------------------------------------------
--- Table `LocationAddress_BuildingFloorRoom_LINKS`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `LocationAddress_BuildingFloorRoom_LINKS` ;
-
-CREATE TABLE IF NOT EXISTS `LocationAddress_BuildingFloorRoom_LINKS` (
-  `locationAddressID_fromLocationAddresses` INT UNSIGNED NOT NULL,
-  `buildingFloorRoomID_fromBuildingFloorRooms` INT UNSIGNED NOT NULL,
-  `locatAddressBuildingFloorRoomID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  PRIMARY KEY (`locatAddressBuildingFloorRoomID`, `locationAddressID_fromLocationAddresses`, `buildingFloorRoomID_fromBuildingFloorRooms`),
-  CONSTRAINT `locationAddressID_fromLocationAddresses`
-    FOREIGN KEY (`locationAddressID_fromLocationAddresses`)
-    REFERENCES `LocationAddresses` (`locationAddressID`)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE,
-  CONSTRAINT `buildingFloorRoomID_fromBuildingFloorRooms`
-    FOREIGN KEY (`buildingFloorRoomID_fromBuildingFloorRooms`)
-    REFERENCES `BuildingFloorRooms` (`buildingFloorRoomID`)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8
-COLLATE = utf8_general_ci;
-
-CREATE INDEX `locationAddressID_fromLocationAddresses_idx` ON `LocationAddress_BuildingFloorRoom_LINKS` (`locationAddressID_fromLocationAddresses` ASC);
-
-CREATE INDEX `buildingFloorRoomID_fromBuildingFloorRooms_idx` ON `LocationAddress_BuildingFloorRoom_LINKS` (`buildingFloorRoomID_fromBuildingFloorRooms` ASC);
-
-CREATE UNIQUE INDEX `locatAddressBuildingFloorRoomID_UNIQUE` ON `LocationAddress_BuildingFloorRoom_LINKS` (`locatAddressBuildingFloorRoomID` ASC);
-
-
--- -----------------------------------------------------
--- Table `EventTimeUnit_LocationRoom_ParticipantGroup_COMBIS`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `EventTimeUnit_LocationRoom_ParticipantGroup_COMBIS` ;
-
-CREATE TABLE IF NOT EXISTS `EventTimeUnit_LocationRoom_ParticipantGroup_COMBIS` (
-  `eventPlannedCourseID` INT UNSIGNED NOT NULL,
-  `locatAddressBuildingFloorRoomID` INT UNSIGNED NOT NULL,
-  `schoolStudentGroupProfessorID` INT UNSIGNED NOT NULL,
-  PRIMARY KEY (`eventPlannedCourseID`, `locatAddressBuildingFloorRoomID`, `schoolStudentGroupProfessorID`),
-  CONSTRAINT `EventPlannedCourseID`
-    FOREIGN KEY (`eventPlannedCourseID`)
-    REFERENCES `EventPlannedCourses` (`eventPlannedCourseID`)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE,
-  CONSTRAINT `SchoolStudentGroupProfessorID`
-    FOREIGN KEY (`schoolStudentGroupProfessorID`)
-    REFERENCES `SchoolStudentGroup_Professor_LINKS` (`schoolStudentGroupProfessorID`)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE,
-  CONSTRAINT `locatAddressBuildingFloorRoomID`
-    FOREIGN KEY (`locatAddressBuildingFloorRoomID`)
-    REFERENCES `LocationAddress_BuildingFloorRoom_LINKS` (`locatAddressBuildingFloorRoomID`)
-    ON DELETE RESTRICT
-    ON UPDATE CASCADE)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8
-COLLATE = utf8_general_ci
-COMMENT = 'Event time scheduling in a Location of a room of the TEI with the registered Participants in the event.';
-
-CREATE INDEX `EventPlannedCourseID_idx` ON `EventTimeUnit_LocationRoom_ParticipantGroup_COMBIS` (`eventPlannedCourseID` ASC);
-
-CREATE INDEX `SchoolStudentGroupProfessorID_idx` ON `EventTimeUnit_LocationRoom_ParticipantGroup_COMBIS` (`schoolStudentGroupProfessorID` ASC);
-
-CREATE INDEX `locatAddressBuildingFloorRoomID_idx` ON `EventTimeUnit_LocationRoom_ParticipantGroup_COMBIS` (`locatAddressBuildingFloorRoomID` ASC);
-
-
--- -----------------------------------------------------
--- Table `EventTypes`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `EventTypes` ;
-
-CREATE TABLE IF NOT EXISTS `EventTypes` (
-  `eventTypeID` INT UNSIGNED NOT NULL,
-  `eventTypeName` VARCHAR(45) NOT NULL,
-  `totalDuration` TIME NOT NULL,
-  PRIMARY KEY (`eventTypeID`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8
-COLLATE = utf8_general_ci;
-
-CREATE UNIQUE INDEX `eventTypeID_idx` ON `EventTypes` (`eventTypeID` ASC);
-
-
--- -----------------------------------------------------
--- Table `TimeSlots`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `TimeSlots` ;
-
-CREATE TABLE IF NOT EXISTS `TimeSlots` (
-  `timeSlotID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `dayID` INT UNSIGNED NOT NULL,
-  `weekID` INT UNSIGNED NOT NULL,
-  `monthID` INT UNSIGNED NOT NULL,
-  `academPeriodID` INT UNSIGNED NOT NULL,
-  `academYearID` INT UNSIGNED NOT NULL,
-  PRIMARY KEY (`timeSlotID`, `dayID`, `weekID`, `monthID`, `academPeriodID`, `academYearID`))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8
-COLLATE = utf8_general_ci
-COMMENT = 'Time slot is the time from a chronological point and have a duration, the event time.';
-
-CREATE UNIQUE INDEX `timeSlotID_idx` ON `TimeSlots` (`timeSlotID` ASC);
 
 
 -- -----------------------------------------------------
@@ -523,27 +556,41 @@ CREATE INDEX `monthID_acadPeriodID_acadYearID_idx` ON `Weeks` (`monthID` ASC, `a
 
 
 -- -----------------------------------------------------
--- Table `Days`
+-- Table `EventPlannedCourse_ScarceResource_ParticipantGroup_COMBIS`
 -- -----------------------------------------------------
-DROP TABLE IF EXISTS `Days` ;
+DROP TABLE IF EXISTS `EventPlannedCourse_ScarceResource_ParticipantGroup_COMBIS` ;
 
-CREATE TABLE IF NOT EXISTS `Days` (
-  `dayID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `weekID` INT UNSIGNED NOT NULL,
-  `monthID` INT UNSIGNED NOT NULL,
-  `academPeriodID` INT UNSIGNED NOT NULL,
-  `academYearID` INT UNSIGNED NOT NULL,
-  PRIMARY KEY (`dayID`, `weekID`, `monthID`, `academPeriodID`, `academYearID`),
-  CONSTRAINT `weekID_monthID_acadPeriodID_acadYearID`
-    FOREIGN KEY (`weekID` , `monthID` , `academPeriodID` , `academYearID`)
-    REFERENCES `Weeks` (`weekID` , `monthID` , `academPeriodID` , `academYearID`)
+CREATE TABLE IF NOT EXISTS `EventPlannedCourse_ScarceResource_ParticipantGroup_COMBIS` (
+  `eventPlaCourseScarceResouParticiGroupID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `eventPlannedCourseID` INT UNSIGNED NOT NULL,
+  `scarceResourceID` INT UNSIGNED NOT NULL,
+  `schoolStudentGroupProfessorID` INT UNSIGNED NOT NULL,
+  PRIMARY KEY (`eventPlaCourseScarceResouParticiGroupID`, `eventPlannedCourseID`, `scarceResourceID`, `schoolStudentGroupProfessorID`),
+  CONSTRAINT `eventPlannedCourseID`
+    FOREIGN KEY (`eventPlannedCourseID`)
+    REFERENCES `EventPlannedCourses` (`eventPlannedCourseID`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT `scarceResourceID`
+    FOREIGN KEY (`scarceResourceID`)
+    REFERENCES `ScarceResources` (`scarceResourceID`)
+    ON DELETE RESTRICT
+    ON UPDATE CASCADE,
+  CONSTRAINT `schoolStudentGroupProfessorID`
+    FOREIGN KEY (`schoolStudentGroupProfessorID`)
+    REFERENCES `SchoolStudentGroup_Professor_LINKS` (`schoolStudentGroupProfessorID`)
     ON DELETE RESTRICT
     ON UPDATE CASCADE)
-ENGINE = InnoDB;
+ENGINE = InnoDB
+COMMENT = 'Event time scheduling in a Location of a room of the TEI with the registered Participants in the event.';
 
-CREATE UNIQUE INDEX `dayID_idx` ON `Days` (`dayID` ASC);
+CREATE INDEX `eventPlannedCourseID_idx` ON `EventPlannedCourse_ScarceResource_ParticipantGroup_COMBIS` (`eventPlannedCourseID` ASC);
 
-CREATE INDEX `weekID_monthID_acadPeriodID_acadYearID_idx` ON `Days` (`weekID` ASC, `monthID` ASC, `academPeriodID` ASC, `academYearID` ASC);
+CREATE INDEX `scarceResourceID_idx` ON `EventPlannedCourse_ScarceResource_ParticipantGroup_COMBIS` (`scarceResourceID` ASC);
+
+CREATE INDEX `schoolStudentGroupProfessorID` ON `EventPlannedCourse_ScarceResource_ParticipantGroup_COMBIS` (`schoolStudentGroupProfessorID` ASC);
+
+CREATE UNIQUE INDEX `eventPlaCourseScarceResouParticiGroupID_UNIQUE` ON `EventPlannedCourse_ScarceResource_ParticipantGroup_COMBIS` (`eventPlaCourseScarceResouParticiGroupID` ASC);
 
 
 SET SQL_MODE=@OLD_SQL_MODE;
