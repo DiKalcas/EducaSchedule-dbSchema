@@ -406,7 +406,7 @@ DROP TABLE IF EXISTS `StudentGroups` ;
 
 CREATE TABLE IF NOT EXISTS `StudentGroups` (
   `studentGroupID` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `studentGroupName` VARCHAR(60) NULL COMMENT 'Student group name is the Title of the student group. The syntax of this  field  is like: ΕΞΑΜΗΝΟΥ ΖΖ ΟΜ' /* comment truncated */ /*�ΔΑ ΦΟΙΤΗΤΩΝ
+  `studentGroupName` VARCHAR(60) NULL COMMENT 'Student group name is the Title of the student group. The syntax of this  field  is like: ΕΞΑΜΗΝΟΥ ΖΖ ΟΜ' /* comment truncated */ /*�ΔΑ ΦΟΙΤΗΤΩΝ
 In addition can be recorded as: ΚΑΙ ΠΕΡΑΣΜΕΝΩΝ ΕΞΑΜΗΝΩΝ
 so that to add in the same group the students of older semesters which are still registered in the lesson.*/,
   `studentGroupAbbrev` VARCHAR(45) NULL,
